@@ -36,6 +36,33 @@ python mcp_server.py
 
 The server starts on `http://0.0.0.0:8000` using SSE transport.
 
+## Architecture
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent (agent.py)
+    participant LLM (Ollama/Mistral)
+    participant MCP Server (mcp_server.py)
+    participant External API
+
+    User->>Agent (agent.py): user message
+    Agent (agent.py)->>MCP Server (mcp_server.py): fetch available tools (on startup)
+    MCP Server (mcp_server.py)-->>Agent (agent.py): tool schemas
+
+    Agent (agent.py)->>LLM (Ollama/Mistral): message + tool schemas
+    LLM (Ollama/Mistral)-->>Agent (agent.py): tool call decision
+
+    Agent (agent.py)->>MCP Server (mcp_server.py): invoke tool (e.g. get_weather)
+    MCP Server (mcp_server.py)->>External API: HTTP request
+    External API-->>MCP Server (mcp_server.py): response
+    MCP Server (mcp_server.py)-->>Agent (agent.py): tool result
+
+    Agent (agent.py)->>LLM (Ollama/Mistral): tool result
+    LLM (Ollama/Mistral)-->>Agent (agent.py): final answer
+    Agent (agent.py)->>User: print response
+```
+
 ## Agent
 
 `agent.py` is a very basic agent loop — just enough to wire together an LLM, a set of MCP tools, and a user input prompt.
